@@ -1,5 +1,5 @@
 ## Introduction
-It is a text-based tower defense game built using Java. I include some ASCII images and sound effects to add more fun to the game.
+It is a text-based tower defense game built using Java. I include some ASCII images and sound effects to add more fun to the game. The players can also choose the difficulty of the game (normal mode or hard mode).
 
 
 ## Brief Explanation of the Game
