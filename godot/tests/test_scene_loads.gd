@@ -18,8 +18,6 @@ func run(t) -> void:
 
 	t.root.add_child(menu_instance)
 	t.root.add_child(city_instance)
-	menu_instance.call("_ready")
-	city_instance.call("_ready")
 
 	t.assert_true(_has_button_with_text(menu_instance, "New Defense"), "main menu has New Defense button")
 	t.assert_true(_has_button_with_text(menu_instance, "Quit"), "main menu has Quit button")

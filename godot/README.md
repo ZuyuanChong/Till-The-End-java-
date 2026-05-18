@@ -7,7 +7,7 @@ This folder contains the Phase 1 Godot prototype for the upgraded Till The End d
 - Godot 4.x
 - `godot` executable available on `PATH`
 
-This worktree also includes a local Godot executable at `.tools/godot-4.6.2/` if `godot` is not on `PATH`.
+If you downloaded Godot locally, the ignored `.tools/godot-4.6.2/` path is a convenient place to keep the executable when `godot` is not on `PATH`.
 
 ## Run
 
@@ -17,7 +17,7 @@ From the repository root:
 godot --path godot
 ```
 
-If `godot` is not on `PATH`, use the local executable:
+If `godot` is not on `PATH` and you have downloaded Godot into `.tools/godot-4.6.2/`, use:
 
 ```powershell
 & '.\.tools\godot-4.6.2\Godot_v4.6.2-stable_win64_console.exe' --path godot
@@ -31,7 +31,7 @@ From the repository root:
 godot --headless --path godot -s res://tests/test_runner.gd
 ```
 
-If `godot` is not on `PATH`, use the local executable:
+If `godot` is not on `PATH` and you have downloaded Godot into `.tools/godot-4.6.2/`, use:
 
 ```powershell
 & '.\.tools\godot-4.6.2\Godot_v4.6.2-stable_win64_console.exe' --headless --path godot -s res://tests/test_runner.gd
@@ -44,4 +44,5 @@ If `godot` is not on `PATH`, use the local executable:
 3. Click clear green tiles near the road to build towers.
 4. Click `Start Raid`.
 5. Click `Next Turn` to advance enemy movement and tower fire.
-6. Win the raid by defeating all enemies before the city core falls.
+6. Win the raid and earn the reward by defeating all enemies before they breach the city core.
+7. If enemies breach the core but it survives, the game returns to planning without paying a raid reward.

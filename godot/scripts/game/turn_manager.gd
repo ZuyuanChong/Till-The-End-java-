@@ -15,6 +15,7 @@ func advance_raid_turn() -> Dictionary:
 		"enemy_moves": [],
 		"tower_attacks": [],
 		"core_damage": 0,
+		"leaked_count": 0,
 		"outcome": ""
 	}
 
@@ -35,9 +36,12 @@ func advance_raid_turn() -> Dictionary:
 		result.outcome = "lost"
 	elif state.enemies.is_empty():
 		state.phase = GameState.Phase.PLANNING
-		state.gold += GameState.RAID_REWARD
 		state.command_points = 0
-		result.outcome = "raid_won"
+		if state.enemies_leaked_this_raid > 0:
+			result.outcome = "raid_survived"
+		else:
+			state.gold += GameState.RAID_REWARD
+			result.outcome = "raid_won"
 	else:
 		result.outcome = "continue"
 
@@ -60,6 +64,8 @@ func _move_enemies(result: Dictionary) -> void:
 		if enemy.grid_position == state.city_core_position:
 			state.core_hp -= enemy.core_damage
 			result.core_damage += enemy.core_damage
+			result.leaked_count += 1
+			state.enemies_leaked_this_raid += 1
 			enemy.take_damage(enemy.hp)
 
 func _fire_towers(result: Dictionary) -> void:

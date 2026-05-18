@@ -134,6 +134,8 @@ func _on_next_turn_pressed() -> void:
 	var result := turn_manager.advance_raid_turn()
 	if result.outcome == "raid_won":
 		last_log = "Raid won. Reward gained. Build again before the next attack."
+	elif result.outcome == "raid_survived":
+		last_log = "The city survived, but enemies breached the core. No reward gained."
 	elif result.outcome == "lost":
 		last_log = "The city core has fallen."
 	elif result.outcome == "continue":

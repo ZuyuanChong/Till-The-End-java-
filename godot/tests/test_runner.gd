@@ -2,8 +2,13 @@ extends SceneTree
 
 var failures := 0
 var assertions := 0
+var started := false
 
-func _init() -> void:
+func _process(_delta: float) -> bool:
+	if started:
+		return false
+
+	started = true
 	run_all_tests()
 	if failures == 0:
 		print("ALL TESTS PASSED: %d assertions" % assertions)
@@ -11,6 +16,7 @@ func _init() -> void:
 	else:
 		push_error("TESTS FAILED: %d failures across %d assertions" % [failures, assertions])
 		quit(1)
+	return false
 
 func run_all_tests() -> void:
 	var dir := DirAccess.open("res://tests")

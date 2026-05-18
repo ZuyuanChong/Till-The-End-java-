@@ -22,6 +22,7 @@ var core_hp := 30
 var command_points := 0
 var command_points_per_turn := 2
 var raid_turn := 0
+var enemies_leaked_this_raid := 0
 var year := 1
 var season_index := 0
 var city_core_position := Vector2i(15, 4)
@@ -44,6 +45,7 @@ func reset() -> void:
 	command_points = 0
 	command_points_per_turn = 2
 	raid_turn = 0
+	enemies_leaked_this_raid = 0
 	year = 1
 	season_index = 0
 	city_core_position = Vector2i(15, 4)
@@ -120,6 +122,7 @@ func start_raid() -> bool:
 
 	phase = Phase.RAID
 	raid_turn = 0
+	enemies_leaked_this_raid = 0
 	command_points = command_points_per_turn
 	enemies = []
 
