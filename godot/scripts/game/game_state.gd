@@ -2,6 +2,7 @@ class_name GameState
 extends RefCounted
 
 const DefenseTower = preload("res://scripts/entities/defense_tower.gd")
+const EnemyUnit = preload("res://scripts/entities/enemy_unit.gd")
 
 enum Phase {
 	PLANNING,
@@ -26,7 +27,7 @@ var season_index := 0
 var city_core_position := Vector2i(15, 4)
 var road_path: Array[Vector2i] = []
 var towers: Array[DefenseTower] = []
-var enemies: Array = []
+var enemies: Array[EnemyUnit] = []
 var next_tower_id := 1
 var next_enemy_id := 1
 
@@ -109,4 +110,22 @@ func build_tower(grid_position: Vector2i) -> bool:
 	next_tower_id += 1
 	towers.append(tower)
 	gold -= TOWER_COST
+	return true
+
+func start_raid() -> bool:
+	if phase != Phase.PLANNING:
+		return false
+	if core_hp <= 0:
+		return false
+
+	phase = Phase.RAID
+	raid_turn = 0
+	command_points = command_points_per_turn
+	enemies = []
+
+	for index in range(3):
+		var enemy := EnemyUnit.new(next_enemy_id, road_path[0], 0, 10, 3)
+		next_enemy_id += 1
+		enemies.append(enemy)
+
 	return true
