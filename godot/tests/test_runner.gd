@@ -29,13 +29,33 @@ func run_all_tests() -> void:
 		if file_name == "test_runner.gd":
 			continue
 
-		var script := load("res://tests/%s" % file_name)
-		if script == null:
+		var script_path := "res://tests/%s" % file_name
+		var script_resource: Resource = ResourceLoader.load(
+			script_path,
+			"GDScript",
+			ResourceLoader.CACHE_MODE_IGNORE
+		)
+		if script_resource == null:
 			fail("Could not load %s" % file_name)
+			continue
+		if not script_resource is Script:
+			fail("%s did not load as a script" % file_name)
+			continue
+
+		var script: Script = script_resource as Script
+		if not script.can_instantiate():
+			fail("Could not instantiate %s" % file_name)
 			continue
 
 		print("Running %s" % file_name)
 		var test_instance: Variant = script.new()
+		if test_instance == null:
+			fail("Could not create test instance for %s" % file_name)
+			continue
+		if not test_instance.has_method("run"):
+			fail("%s is missing run(t)" % file_name)
+			continue
+
 		test_instance.run(self)
 
 func assert_true(value: bool, message: String) -> void:
