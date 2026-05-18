@@ -9,6 +9,7 @@ func run(t) -> void:
 	t.assert_true(state.start_raid(), "raid starts from planning phase")
 	t.assert_eq(state.phase, GameState.Phase.RAID, "phase switches to raid")
 	t.assert_eq(state.enemies.size(), 3, "first wave spawns three enemies")
+	t.assert_eq(state.enemies[0].max_hp, 5, "first wave enemies use prototype raid health")
 
 	var manager := TurnManager.new(state)
 	var first_position := state.enemies[0].grid_position

@@ -15,12 +15,7 @@ static func pick_target_for_tower(tower: DefenseTower, enemies: Array[EnemyUnit]
 		if not enemy.is_alive():
 			continue
 		var distance := manhattan_distance(tower.grid_position, enemy.grid_position)
-		var adjacent_lane_distance := absi(tower.grid_position.x - enemy.grid_position.x)
-		var targets_adjacent_lane := (
-			absi(tower.grid_position.y - enemy.grid_position.y) == 1
-			and adjacent_lane_distance <= tower.range_tiles
-		)
-		if distance > tower.range_tiles and not targets_adjacent_lane:
+		if distance > tower.range_tiles:
 			continue
 		if enemy.path_index > best_progress:
 			best_progress = enemy.path_index

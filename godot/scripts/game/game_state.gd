@@ -124,7 +124,7 @@ func start_raid() -> bool:
 	enemies = []
 
 	for index in range(3):
-		var enemy := EnemyUnit.new(next_enemy_id, road_path[0], 0, 10, 3)
+		var enemy := EnemyUnit.new(next_enemy_id, road_path[0], 0, 5, 3)
 		next_enemy_id += 1
 		enemies.append(enemy)
 
