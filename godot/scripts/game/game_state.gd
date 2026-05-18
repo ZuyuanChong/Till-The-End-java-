@@ -1,6 +1,8 @@
 class_name GameState
 extends RefCounted
 
+const DefenseTower = preload("res://scripts/entities/defense_tower.gd")
+
 enum Phase {
 	PLANNING,
 	RAID,
@@ -23,7 +25,7 @@ var year := 1
 var season_index := 0
 var city_core_position := Vector2i(15, 4)
 var road_path: Array[Vector2i] = []
-var towers: Array = []
+var towers: Array[DefenseTower] = []
 var enemies: Array = []
 var next_tower_id := 1
 var next_enemy_id := 1
@@ -88,4 +90,23 @@ func is_buildable(grid_position: Vector2i) -> bool:
 		return false
 	if is_core(grid_position):
 		return false
+	return get_tower_at(grid_position) == null
+
+func get_tower_at(grid_position: Vector2i) -> DefenseTower:
+	for tower in towers:
+		if tower.grid_position == grid_position:
+			return tower
+	return null
+
+func can_build_tower(grid_position: Vector2i) -> bool:
+	return phase == Phase.PLANNING and gold >= TOWER_COST and is_buildable(grid_position)
+
+func build_tower(grid_position: Vector2i) -> bool:
+	if not can_build_tower(grid_position):
+		return false
+
+	var tower := DefenseTower.new(next_tower_id, grid_position)
+	next_tower_id += 1
+	towers.append(tower)
+	gold -= TOWER_COST
 	return true
