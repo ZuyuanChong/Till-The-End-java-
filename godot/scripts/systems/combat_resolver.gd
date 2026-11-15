@@ -23,12 +23,13 @@ static func pick_target_for_tower(tower: DefenseTower, enemies: Array[EnemyUnit]
 
 	return best_target
 
-static func resolve_tower_attack(tower: DefenseTower, target: EnemyUnit) -> Dictionary:
-	target.take_damage(tower.damage)
+static func resolve_tower_attack(tower: DefenseTower, target: EnemyUnit, damage_modifier: int = 0) -> Dictionary:
+	var damage := maxi(1, tower.damage + damage_modifier)
+	target.take_damage(damage)
 	tower.mark_fired()
 	return {
 		"tower": tower.id,
 		"target": target.id,
-		"damage": tower.damage,
+		"damage": damage,
 		"target_hp": target.hp
 	}

@@ -2,187 +2,129 @@ extends Node2D
 
 const GameState = preload("res://scripts/game/game_state.gd")
 const TurnManager = preload("res://scripts/game/turn_manager.gd")
+const CampaignHud = preload("res://scripts/ui/campaign_hud.gd")
+const CombatResolver = preload("res://scripts/systems/combat_resolver.gd")
 
 const TILE_SIZE := 40
 const MAP_ORIGIN := Vector2(48, 120)
+const SEASON_COLORS := [Color("355a43"), Color("53653c"), Color("5b5941"), Color("617476")]
 
 var state: GameState
 var turn_manager: TurnManager
-var status_label: Label
-var log_label: Label
-var start_button: Button
-var next_turn_button: Button
-var reset_button: Button
-var last_log := "Build towers on open tiles, then start the raid."
+var hud: CanvasLayer
+var selected_position := Vector2i(-1, -1)
+var build_mode := true
+var last_log := "Year 1 - the city prepares."
 
 func _ready() -> void:
-	state = GameState.new_game()
+	var difficulty_id := str(get_tree().root.get_meta("difficulty_id", "normal"))
+	state = GameState.new_game(difficulty_id, randi())
 	turn_manager = TurnManager.new(state)
-	_build_hud()
+	hud = CampaignHud.new()
+	add_child(hud)
+	hud.action_requested.connect(_on_action)
+	hud.build_mode_changed.connect(func(enabled: bool): build_mode = enabled)
 	_update_hud()
-	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton):
+	if not event is InputEventMouseButton or not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
 		return
-	if not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
+	var local: Vector2 = event.position - MAP_ORIGIN
+	var position := Vector2i(floori(local.x / TILE_SIZE), floori(local.y / TILE_SIZE))
+	if not state.is_in_bounds(position):
 		return
-
-	var grid_position := _screen_to_grid(event.position)
-	if state.phase == GameState.Phase.PLANNING:
-		if state.build_tower(grid_position):
-			last_log = "Built tower at %s. Gold remaining: %d." % [str(grid_position), state.gold]
-		elif state.is_road(grid_position):
-			last_log = "Road tiles must remain open for the prototype route."
-		elif not state.is_in_bounds(grid_position):
-			last_log = "Select a tile inside the city grid."
+	selected_position = position
+	if build_mode and state.get_tower_at(position) == null and state.phase == GameState.Phase.PLANNING:
+		if state.build_tower(position):
+			last_log = "Tower commissioned - 100 gold."
 		else:
-			last_log = "Cannot build there."
-
+			last_log = "Tower placement unavailable."
 	_update_hud()
-	queue_redraw()
 
 func _draw() -> void:
-	_draw_map()
-	_draw_towers()
-	_draw_enemies()
-
-func _draw_map() -> void:
+	if state == null:
+		return
+	var selected_tower = state.get_tower_at(selected_position)
 	for x in range(GameState.MAP_WIDTH):
 		for y in range(GameState.MAP_HEIGHT):
-			var grid_position := Vector2i(x, y)
-			var rect := Rect2(
-				MAP_ORIGIN + Vector2(x * TILE_SIZE, y * TILE_SIZE),
-				Vector2(TILE_SIZE - 2, TILE_SIZE - 2)
-			)
-			var fill := Color(0.20, 0.33, 0.24)
-			if state.is_road(grid_position):
-				fill = Color(0.42, 0.33, 0.23)
-			if state.is_core(grid_position):
-				fill = Color(0.20, 0.30, 0.62)
-
-			draw_rect(rect, fill, true)
-			draw_rect(rect, Color(0.06, 0.08, 0.07), false, 1.0)
-
-func _draw_towers() -> void:
+			var cell := Vector2i(x, y)
+			var rect := Rect2(_tile_position(cell), Vector2(TILE_SIZE - 2, TILE_SIZE - 2))
+			var fill: Color = SEASON_COLORS[state.season_index]
+			if state.is_road(cell):
+				fill = Color("8a8170")
+			if selected_tower != null and CombatResolver.manhattan_distance(cell, selected_position) <= selected_tower.range_tiles:
+				fill = fill.lightened(0.15)
+			draw_rect(rect, fill)
+			if state.is_core(cell):
+				_draw_keep(rect.position)
+			if cell == selected_position:
+				draw_rect(rect, Color("faf2c0"), false, 2)
 	for tower in state.towers:
-		var center := _grid_to_screen(tower.grid_position) + Vector2(TILE_SIZE / 2, TILE_SIZE / 2)
-		var base := Rect2(center - Vector2(12, 12), Vector2(24, 24))
-		draw_rect(base, Color(0.25, 0.55, 0.95), true)
-		draw_rect(base, Color(0.88, 0.95, 1.0), false, 2.0)
-
-func _draw_enemies() -> void:
+		var origin := _tile_position(tower.grid_position)
+		draw_rect(Rect2(origin + Vector2(8, 12), Vector2(24, 24)), Color("7ba3b6"))
+		draw_rect(Rect2(origin + Vector2(6, 6), Vector2(28, 10)), Color("ced9dc"))
+		draw_rect(Rect2(origin + Vector2(17, 17), Vector2(6, 12)), Color("334954"))
+		for level in range(tower.level):
+			draw_rect(Rect2(origin + Vector2(8 + level * 9, 4), Vector2(5, 5)), Color("f2d06e"))
 	for enemy in state.enemies:
-		var center := _grid_to_screen(enemy.grid_position) + Vector2(TILE_SIZE / 2, TILE_SIZE / 2)
-		draw_circle(center, 12.0, Color(0.78, 0.18, 0.14))
-		draw_arc(center, 15.0, 0.0, TAU, 24, Color(1.0, 0.76, 0.32), 2.0)
+		var center := _tile_position(enemy.grid_position) + Vector2(20 + (enemy.id % 3 - 1) * 9, 20)
+		draw_rect(Rect2(center - Vector2(6, 9), Vector2(12, 18)), Color("cc6360"))
+		draw_rect(Rect2(center + Vector2(-3, -6), Vector2(2, 2)), Color.WHITE)
+		draw_rect(Rect2(center + Vector2(2, -6), Vector2(2, 2)), Color.WHITE)
+		draw_rect(Rect2(center + Vector2(-7, -13), Vector2(14, 2)), Color("24272a"))
+		draw_rect(Rect2(center + Vector2(-7, -13), Vector2(14.0 * enemy.hp / enemy.max_hp, 2)), Color("efbd7b"))
 
-func _build_hud() -> void:
-	var layer := CanvasLayer.new()
-	add_child(layer)
+func _draw_keep(origin: Vector2) -> void:
+	draw_rect(Rect2(origin + Vector2(3, 8), Vector2(34, 29)), Color("c1c8c7"))
+	draw_rect(Rect2(origin + Vector2(2, 3), Vector2(10, 13)), Color("dce0df"))
+	draw_rect(Rect2(origin + Vector2(28, 3), Vector2(10, 13)), Color("dce0df"))
+	draw_rect(Rect2(origin + Vector2(16, 22), Vector2(9, 15)), Color("304f61"))
 
-	var panel := PanelContainer.new()
-	panel.position = Vector2(760, 32)
-	panel.custom_minimum_size = Vector2(460, 420)
-	layer.add_child(panel)
+func _tile_position(cell: Vector2i) -> Vector2:
+	return MAP_ORIGIN + Vector2(cell) * TILE_SIZE
 
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 10)
-	panel.add_child(box)
-
-	var title := Label.new()
-	title.text = "Kuala Lumpur Defense"
-	title.add_theme_font_size_override("font_size", 24)
-	box.add_child(title)
-
-	status_label = Label.new()
-	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(status_label)
-
-	var button_row := HBoxContainer.new()
-	button_row.add_theme_constant_override("separation", 8)
-	box.add_child(button_row)
-
-	start_button = Button.new()
-	start_button.text = "Start Raid"
-	start_button.pressed.connect(_on_start_raid_pressed)
-	button_row.add_child(start_button)
-
-	next_turn_button = Button.new()
-	next_turn_button.text = "Next Turn"
-	next_turn_button.pressed.connect(_on_next_turn_pressed)
-	button_row.add_child(next_turn_button)
-
-	reset_button = Button.new()
-	reset_button.text = "Reset"
-	reset_button.pressed.connect(_on_reset_pressed)
-	button_row.add_child(reset_button)
-
-	log_label = Label.new()
-	log_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(log_label)
+func _on_action(action: String) -> void:
+	match action:
+		"start": _on_start_raid_pressed()
+		"turn": _on_next_turn_pressed()
+		"reset": _on_reset_pressed()
+		"upgrade":
+			if state.upgrade_tower(selected_position):
+				last_log = "Tower upgraded - 75 gold."
+		"repair":
+			if state.repair_wall():
+				last_log = "City wall repaired - 50 gold."
+		"fortify":
+			if state.fortify_wall():
+				last_log = "City wall fortified - 100 gold."
+		"rally":
+			if state.rally_citizens():
+				last_log = "Citizens rallied - 50 gold."
+	_update_hud()
 
 func _on_start_raid_pressed() -> void:
 	if state.start_raid():
-		last_log = "Raid started. Advance turns to resolve enemy movement and tower fire."
-	else:
-		last_log = "Cannot start raid from the current phase."
+		last_log = "%d enemies approach the city." % state.enemies.size()
 	_update_hud()
-	queue_redraw()
 
 func _on_next_turn_pressed() -> void:
 	var result := turn_manager.advance_raid_turn()
-	if result.outcome == "raid_won":
-		last_log = "Raid won. Reward gained. Build again before the next attack."
-	elif result.outcome == "raid_survived":
-		last_log = "The city survived, but enemies breached the core. No reward gained."
-	elif result.outcome == "lost":
-		last_log = "The city core has fallen."
-	elif result.outcome == "continue":
-		last_log = "Turn %d: %d moves, %d tower attacks, %d core damage." % [
-			state.raid_turn,
-			result.enemy_moves.size(),
-			result.tower_attacks.size(),
-			result.core_damage
-		]
-	else:
-		last_log = "Start a raid before advancing turns."
-
+	match result.outcome:
+		"raid_won": last_log = "Raid repelled. Reward +75 gold."
+		"raid_survived": last_log = "City breached. The defenses held."
+		"lost": last_log = "Kuala Lumpur has fallen."
+		"continue": last_log = "Turn %d - %d shots, %d wall damage." % [state.raid_turn, result.tower_attacks.size(), result.core_damage]
+	if result.has("season"):
+		last_log += "\n%s, Year %d. Tax +%d gold." % [state.season_name(), state.year, state.last_tax]
 	_update_hud()
-	queue_redraw()
 
 func _on_reset_pressed() -> void:
-	state = GameState.new_game()
+	state = GameState.new_game(str(state.difficulty.id), randi())
 	turn_manager = TurnManager.new(state)
-	last_log = "Prototype reset."
+	selected_position = Vector2i(-1, -1)
+	last_log = "Year 1 - the city prepares."
 	_update_hud()
-	queue_redraw()
 
 func _update_hud() -> void:
-	var phase_name := "Planning"
-	if state.phase == GameState.Phase.RAID:
-		phase_name = "Raid"
-	elif state.phase == GameState.Phase.GAME_OVER:
-		phase_name = "Game Over"
-	elif state.phase == GameState.Phase.VICTORY:
-		phase_name = "Victory"
-
-	status_label.text = "Phase: %s\nGold: %d\nCore HP: %d\nTowers: %d\nEnemies: %d\nCommand Points: %d\nRaid Turn: %d" % [
-		phase_name,
-		state.gold,
-		state.core_hp,
-		state.towers.size(),
-		state.enemies.size(),
-		state.command_points,
-		state.raid_turn
-	]
-	log_label.text = last_log
-	start_button.disabled = state.phase != GameState.Phase.PLANNING
-	next_turn_button.disabled = state.phase != GameState.Phase.RAID
-
-func _screen_to_grid(screen_position: Vector2) -> Vector2i:
-	var local := screen_position - MAP_ORIGIN
-	return Vector2i(floori(local.x / TILE_SIZE), floori(local.y / TILE_SIZE))
-
-func _grid_to_screen(grid_position: Vector2i) -> Vector2:
-	return MAP_ORIGIN + Vector2(grid_position.x * TILE_SIZE, grid_position.y * TILE_SIZE)
+	hud.refresh(state, selected_position, last_log)
+	queue_redraw()

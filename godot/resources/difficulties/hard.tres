@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="DifficultyConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/difficulty_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "hard"
+display_name = "Hard"
+base_tax = 50
+wave_size = 4
+enemy_health = 7
+enemy_core_damage = 4
+threat_per_season = 15
+events_per_season = 2

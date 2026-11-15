@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SeasonEvent" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/season_event.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "drought"
+display_name = "Drought"
+morale_delta = -6
+wall_damage = 2
