@@ -24,7 +24,7 @@ func run(t) -> void:
 		result = manager.advance_raid_turn()
 
 	t.assert_eq(state.phase, GameState.Phase.PLANNING, "raid returns to planning after enemies are defeated")
-	t.assert_eq(state.gold, 175, "raid reward is paid after tower cost")
+	t.assert_eq(state.gold, 255, "raid reward and seasonal tax are paid after tower cost")
 	t.assert_eq(result.outcome, "raid_won", "defeated raid reports win outcome")
 
 	var breach_state := GameState.new_game()
@@ -39,5 +39,5 @@ func run(t) -> void:
 	t.assert_eq(breach_state.phase, GameState.Phase.PLANNING, "breached raid returns to planning if core survives")
 	t.assert_true(breach_state.core_hp > 0, "breached raid leaves surviving core above zero hp")
 	t.assert_true(breach_state.core_hp < 30, "breached raid damages the core")
-	t.assert_eq(breach_state.gold, 200, "breached raid does not pay reward")
+	t.assert_eq(breach_state.gold, 280, "breached raid collects seasonal tax without raid reward")
 	t.assert_eq(breach_result.outcome, "raid_survived", "breached raid reports survived outcome")

@@ -2,6 +2,7 @@ class_name DefenseTower
 extends RefCounted
 
 var id := 0
+var level := 1
 var grid_position := Vector2i.ZERO
 var damage := 5
 var range_tiles := 3

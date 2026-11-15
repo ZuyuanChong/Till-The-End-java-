@@ -1,5 +1,7 @@
 extends Control
 
+var difficulty_selector: OptionButton
+
 func _ready() -> void:
 	var root := CenterContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -25,6 +27,12 @@ func _ready() -> void:
 	subtitle.add_theme_font_size_override("font_size", 18)
 	box.add_child(subtitle)
 
+	difficulty_selector = OptionButton.new()
+	difficulty_selector.add_item("Normal")
+	difficulty_selector.add_item("Hard")
+	difficulty_selector.tooltip_text = "Hard lowers tax, adds a second event, and strengthens raids"
+	box.add_child(difficulty_selector)
+
 	var start_button := Button.new()
 	start_button.text = "New Defense"
 	start_button.pressed.connect(_on_start_pressed)
@@ -36,6 +44,8 @@ func _ready() -> void:
 	box.add_child(quit_button)
 
 func _on_start_pressed() -> void:
+	var difficulty_id := "hard" if difficulty_selector.selected == 1 else "normal"
+	get_tree().root.set_meta("difficulty_id", difficulty_id)
 	get_tree().change_scene_to_file("res://scenes/city_defense.tscn")
 
 func _on_quit_pressed() -> void:

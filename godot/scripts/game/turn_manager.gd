@@ -35,13 +35,14 @@ func advance_raid_turn() -> Dictionary:
 		state.phase = GameState.Phase.GAME_OVER
 		result.outcome = "lost"
 	elif state.enemies.is_empty():
-		state.phase = GameState.Phase.PLANNING
-		state.command_points = 0
 		if state.enemies_leaked_this_raid > 0:
 			result.outcome = "raid_survived"
 		else:
 			state.gold += GameState.RAID_REWARD
 			result.outcome = "raid_won"
+		result["season"] = state.advance_season()
+		if state.phase == GameState.Phase.GAME_OVER:
+			result.outcome = "lost"
 	else:
 		result.outcome = "continue"
 
@@ -76,7 +77,7 @@ func _fire_towers(result: Dictionary) -> void:
 
 		var target := CombatResolver.pick_target_for_tower(tower, state.enemies)
 		if target != null:
-			result.tower_attacks.append(CombatResolver.resolve_tower_attack(tower, target))
+			result.tower_attacks.append(CombatResolver.resolve_tower_attack(tower, target, state.season_damage_modifier))
 
 func _remove_defeated_enemies() -> void:
 	var survivors: Array[EnemyUnit] = []
